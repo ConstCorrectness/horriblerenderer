@@ -39,3 +39,23 @@
 
 # debug information files
 *.dwo
+
+
+# macOS
+.DS_Store
+
+
+
+# Jupyter/Python
+.ipynb_checkpoints
+__pycache__
+.venv
+
+
+# Emacs stuff
+.#
+~.*
+
+
+# Build outputs
+build
