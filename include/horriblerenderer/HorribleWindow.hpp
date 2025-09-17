@@ -5,12 +5,12 @@
 #include <GLFW/glfw3.h>
 
 
+#include <iostream>
 #include <memory>
 #include <string_view>
 #include <functional>
 
 
-template<typename Deleter = void(*)(GLFWwindow*)>
 class HorribleWindow {
 public:
   // move-only type
@@ -22,10 +22,15 @@ public:
   HorribleWindow& operator=(HorribleWindow&&) noexcept = default;
 
   ~HorribleWindow() {
+    window_.reset();
     glfwTerminate();
   }
 
-  explicit HorribleWindow(int width = 640, int height = 480, std::string_view title = "HorribleWindow", GLFWmonitor *monitor = nullptr, GLFWwindow* share = nullptr): width_{width}, height_{height} {
+  explicit HorribleWindow(int width = 640, int height = 480, 
+    std::string_view title = "HorribleWindow", 
+    GLFWmonitor *monitor = nullptr, 
+    GLFWwindow* share = nullptr)
+    : width_{width}, height_{height} {
     if (!glfwInit()) {
       std::cerr << "ERROR: glfwInit()\n";
       std::exit(1);
@@ -40,18 +45,23 @@ public:
 #endif        // __APPLE__
 
 
-    // Deleter = pointer-to-function or functor:
-    window_ = std::unique_ptr<GLFWwindow, Deleter> {
-      glfwCreateWindow(width, height, title.data(), monitor, share), Deleter{}
-    };
+    GLFWwindow *w = glfwCreateWindow(width, height, title.data(), monitor, share);
+    if (!w) {
+      std::cerr << "ERROR: glfwCreateWindow()\n";
+      glfwTerminate();
+      std::exit(1);
+    }
+
+    window_ = { w, glfwDestroyWindow };
+
 
 
     glfwMakeContextCurrent(window_.get());
-    glfwSwapInterval(1);      
+    glfwSwapInterval(1);
+
 
     if (!gladLoadGL(glfwGetProcAddress)) {
       std::cerr << "ERROR: gladLoadGL()\n";
-      glfwDestroyWindow(window_.get());
       std::exit(1);
     }
   }
@@ -59,6 +69,7 @@ public:
 
   bool mainLoop() {
     while (!glfwWindowShouldClose(window_.get())) {
+
       glViewport(0, 0, width_, height_);
       glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -71,7 +82,7 @@ public:
   }
   
 private:
-  std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow *)>> window_;
+  std::unique_ptr<GLFWwindow, void(*)(GLFWwindow *)> window_ {nullptr, glfwDestroyWindow};
 
   int width_ { };
   int height_ { };

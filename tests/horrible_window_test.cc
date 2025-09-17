@@ -5,7 +5,6 @@
 
 
 TEST(HorribleTests, HorribleWindow) {
-  HorribleWindow<decltype([](GLFWwindow *window) -> void { })> window;
+  HorribleWindow window;
   
-
 }

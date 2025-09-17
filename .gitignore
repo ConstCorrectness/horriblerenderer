@@ -59,4 +59,4 @@ __pycache__
 
 # Build outputs
 build
-.vscode
+.vscode/
