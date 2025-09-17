@@ -1,94 +1,68 @@
 #ifndef HORRIBLE_WINDOW_HPP_
 #define HORRIBLE_WINDOW_HPP_
 
-#include <glad/gl.h>
-#include <GLFW/glfw3.h>
+#include <webgpu/webgpu.h>
 
+#include <GLFW/glfw3.h>
+#include "glfw3webgpu.h"
 
 #include <iostream>
-#include <memory>
-#include <string_view>
-#include <functional>
+#include <string>
+#include <vector>
+#include <cassert>
+
+#include "horriblerenderer/HorribleWindow.hpp"
 
 
-class HorribleWindow {
+
+class HorribleWebGPU {
 public:
-  // move-only type
-  HorribleWindow(HorribleWindow const&) = delete;
-  HorribleWindow& operator=(HorribleWindow const&) = delete;
+  HorribleWebGPU(int width = 640, int height = 480, std::string const& title = "HorribleWebGPU") {
+    glfwInit();
 
-  // move operations `noexcept`
-  HorribleWindow(HorribleWindow&&) noexcept = default;
-  HorribleWindow& operator=(HorribleWindow&&) noexcept = default;
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-  ~HorribleWindow() {
-    window_.reset();
+    window = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
+    if (!window) {
+      std::clog << "[ERROR]: glfwCreateWindow()\n";
+      std::exit(1);
+    }
+
+    instance = wgpuCreateInstance(nullptr);
+
+    surface = glfwGetWGPUSurface(instance, window);
+
+
+    WGPURequestAdapterOptions adapterOpts { .nextInChain = nullptr, .compatibleSurface = surface };
+    
+
+
+
+  }
+
+  ~HorribleWebGPU() {
+    wgpuInstanceRelease(instance);
+    wgpuAdapterRelease(adapter);
+    wgpuDeviceRelease(device);
+    wgpuQueueRelease(queue);
+    wgpuSurfaceRelease(surface);
+
+    glfwDestroyWindow(window);
     glfwTerminate();
   }
 
-  explicit HorribleWindow(int width = 640, int height = 480, 
-    std::string_view title = "HorribleWindow", 
-    GLFWmonitor *monitor = nullptr, 
-    GLFWwindow* share = nullptr)
-    : width_{width}, height_{height} {
-    if (!glfwInit()) {
-      std::cerr << "ERROR: glfwInit()\n";
-      std::exit(1);
-    }
-    
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-#ifdef __APPLE__
-    glfwWindow(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE)
-#endif        // __APPLE__
-
-
-    GLFWwindow *w = glfwCreateWindow(width, height, title.data(), monitor, share);
-    if (!w) {
-      std::cerr << "ERROR: glfwCreateWindow()\n";
-      glfwTerminate();
-      std::exit(1);
-    }
-
-    window_ = { w, glfwDestroyWindow };
-
-
-
-    glfwMakeContextCurrent(window_.get());
-    glfwSwapInterval(1);
-
-
-    if (!gladLoadGL(glfwGetProcAddress)) {
-      std::cerr << "ERROR: gladLoadGL()\n";
-      std::exit(1);
-    }
-  }
-
-
-  bool mainLoop() {
-    while (!glfwWindowShouldClose(window_.get())) {
-
-      glViewport(0, 0, width_, height_);
-      glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-      glfwSwapBuffers(window_.get());
-      glfwPollEvents();
-    }
-
-    return true;
-  }
-  
 private:
-  std::unique_ptr<GLFWwindow, void(*)(GLFWwindow *)> window_ {nullptr, glfwDestroyWindow};
+  WGPUInstance  instance  { nullptr };
+  WGPUAdapter   adapter   { nullptr };
+  WGPUDevice    device    { nullptr };
+  WGPUSurface   surface   { nullptr };
+  WGPUQueue     queue     { nullptr };
 
-  int width_ { };
-  int height_ { };
+  GLFWwindow*   window { nullptr };
+
 };
-
-
 
 
 #endif          // HORRIBLE_WINDOW_HPP_

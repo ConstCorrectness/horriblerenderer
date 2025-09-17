@@ -41,7 +41,10 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "")
 add_subdirectory(external/glfw)
 
 include_directories(include)
+include_directories("${CMAKE_SOURCE_DIR}/include/horriblerenderer")
+include_directories("${CMAKE_SOURCE_DIR}/include/utils")
 include_directories(external/glad/include)
+include_directories("${CMAKE_SOURCE_DIR}/glfw3webgpu")
 
 # GoogleTest
 set(INSTALL_GTEST OFF CACHE BOOL "")
@@ -60,6 +63,9 @@ add_subdirectory(external/glad)
 
 add_subdirectory(src)
 
+
+add_subdirectory(glfw3webgpu)
+
 # Tests
 if(BUILD_TESTING)
 enable_testing()
@@ -71,4 +77,5 @@ endif()
 if(BUILD_BENCHMARKS)
   add_subdirectory(benchmarks)
 endif()
+
 

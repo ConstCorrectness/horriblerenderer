@@ -1,9 +1,10 @@
 add_executable(horrible_renderer
   main.cc
+	horriblerenderer/HorribleWindow.cc
+	utils/utils.cc
 )
 
-target_link_libraries(horrible_renderer PRIVATE webgpu)
-
+target_link_libraries(horrible_renderer PRIVATE webgpu glfw)
 
 target_copy_webgpu_binaries(horrible_renderer)
 
